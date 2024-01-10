@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'Home_Screen.dart';
 import 'Login_Screen.dart';
@@ -7,19 +8,67 @@ void main() {
   runApp(MyApp());
 }
 
+// class MyApp extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       title: 'Order App',
+//       home:
+//       LoginScreen(),
+//       // HomePage(),
+//     );
+//   }
+// }
+
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Order App',
-      home:
-      LoginScreen(),
-      // HomePage(),
+    return FutureBuilder<Map<String, dynamic>>(
+      // Check login status and get mobile number
+      future: checkLoginStatus(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // Still waiting for the check to complete
+          return CircularProgressIndicator(); // or some loading indicator
+        } else {
+          if (snapshot.data!['isLoggedIn']) {
+            // User is logged in, navigate to HomeScreen
+            return MaterialApp(
+              title: 'Grocery App',
+              theme: ThemeData(
+                primarySwatch: Colors.green,
+              ),
+              home: HomePage(
+                mobileNumber: snapshot.data!['mobileNumber'],
+              ),
+            );
+          } else {
+            // User is not logged in, navigate to LoginScreen
+            return MaterialApp(
+              title: 'Grocery App',
+              theme: ThemeData(
+                primarySwatch: Colors.green,
+              ),
+              home: LoginScreen(),
+            );
+          }
+        }
+      },
     );
   }
+
+  // Function to check login status and get mobile number
+  Future<Map<String, dynamic>> checkLoginStatus() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    bool isLoggedIn = sharedPreferences.getBool('isLoggedIn') ?? false;
+    String? mobileNumber = sharedPreferences.getString('mobile');
+
+    return {
+      'isLoggedIn': isLoggedIn,
+      'mobileNumber': mobileNumber,
+    };
+  }
 }
-
-
 
 
 // import 'dart:convert';

@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:shared_preferences/shared_preferences.dart';
 
 import 'Home_Screen.dart';
@@ -42,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    final String apiUrl = 'https://apip.trifrnd.com/fruits/inv.php?apicall=login';
+    final String apiUrl = 'https://trifrnd.in/api/inv.php?apicall=login';
 
     await Future.delayed(const Duration(seconds: 1));
 
@@ -62,17 +63,17 @@ class _LoginScreenState extends State<LoginScreen> {
       if (responseData == "OK") {
         final user = json.decode(response.body)[0];
         try {
-          // final SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+          final SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
 
           // Save the mobile number and login status
-          // sharedPreferences.setString('mobile', _mobileController.text);
-          // sharedPreferences.setBool('isLoggedIn', true);
+          sharedPreferences.setString('mobile', _mobileController.text);
+          sharedPreferences.setBool('isLoggedIn', true);
 
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => HomePage(
-                // mobileNumber: _mobileController.text,
+                mobileNumber: _mobileController.text,
               ),
             ),
           );

@@ -10,8 +10,12 @@ import 'package:waiter_bill_app/Home_Screen.dart';
 
 class MenuListPage extends StatefulWidget {
   final int tableNumber;
+  final String mobileNumber;
 
-  MenuListPage({required this.tableNumber});
+  MenuListPage({
+    required this.tableNumber,
+    required this.mobileNumber
+  });
 
   @override
   _MenuListPageState createState() => _MenuListPageState();
@@ -31,6 +35,10 @@ class _MenuListPageState extends State<MenuListPage> {
   bool _isLoading = false;
   BluetoothPrint bluetoothPrint = BluetoothPrint.instance;
   bool _loading = false;
+  bool isLoading = false;
+  bool isPrintButtonPressed = false;
+
+
 
   @override
   void initState() {
@@ -40,6 +48,7 @@ class _MenuListPageState extends State<MenuListPage> {
     fetchData(); // Fetch order data when the widget is initialized
     _handleBluetoothPermission();
   }
+
   // Here we check the bluetooth Permission
   Future<void> _handleBluetoothPermission() async {
     var bluetoothPermissionStatus = await Permission.bluetooth.request();
@@ -54,6 +63,7 @@ class _MenuListPageState extends State<MenuListPage> {
       print("Bluetooth Permission Failed");
     }
   }
+
   // Here we check the status of the Bluetooth Connection.
   Future<void> _checkBluetoothStatus() async {
     bool isBluetoothOn =
@@ -70,6 +80,7 @@ class _MenuListPageState extends State<MenuListPage> {
       print("Bluetooth IS Off");
     }
   }
+
   // In this function connection to Printer code performed
   Future<void> _connectToBluetoothPrinter() async {
     try {
@@ -288,7 +299,11 @@ class _MenuListPageState extends State<MenuListPage> {
           fontSize: 16.0);
 // Reload the page by fetching the updated data
       Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => HomePage()));
+          context,
+          MaterialPageRoute(
+              builder: (context) => HomePage(
+                    mobileNumber: widget.mobileNumber,
+                  )));
 
       // Optionally, you can refresh the table or update the UI as needed.
     } else {
@@ -438,14 +453,14 @@ class _MenuListPageState extends State<MenuListPage> {
         // Handle error
         print('Failed to add item to bill: ${response.statusCode}');
       }
-      Fluttertoast.showToast(
-          msg: 'Item added to bill successfully: $itemName',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-          fontSize: 16.0);
+      // Fluttertoast.showToast(
+      //     msg: 'Item added to bill successfully: $itemName',
+      //     toastLength: Toast.LENGTH_SHORT,
+      //     gravity: ToastGravity.BOTTOM,
+      //     timeInSecForIosWeb: 1,
+      //     backgroundColor: Colors.green,
+      //     textColor: Colors.white,
+      //     fontSize: 16.0);
     }
     showBillItemsPopup(ordersForTable, grandTotal, latestInvoiceId);
 
@@ -470,6 +485,8 @@ class _MenuListPageState extends State<MenuListPage> {
     }
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -490,12 +507,13 @@ class _MenuListPageState extends State<MenuListPage> {
             order['order_status'] == 'In Process')
         .toList();
 
+
     return WillPopScope(
       onWillPop: () async {
         // Handle back button press here
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomePage()),
+          MaterialPageRoute(builder: (context) => HomePage(mobileNumber: widget.mobileNumber,)),
         );
         // Navigator.pop(context);
         return false; // Return false to prevent default back button behavior
@@ -691,44 +709,122 @@ class _MenuListPageState extends State<MenuListPage> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             ElevatedButton(
-              onPressed: () {
-                // placeOrder();
-                // addItnvocie();
-                addToBill();
+              onPressed: () async {
+                // Set the loading state to true
+                setState(() {
+                  isLoading = true;
+                });
+
+                // Call the addToBill function
+                await addToBill();
+
+                // Set the loading state to false after addToBill is completed
+                setState(() {
+                  isLoading = false;
+                });
               },
-              child: const Text('Print Bill'),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Visibility(
+                    visible: !isLoading,
+                    child: const Text('Print Bill'),
+                  ),
+                  Visibility(
+                    visible: isLoading,
+                    child: CircularProgressIndicator(),
+                  ),
+                ],
+              ),
             ),
-            // ElevatedButton(
-            //   onPressed: () {
-            //     // Place order button pressed
-            //     // placeOrder();
-            //     completeOrder(
-            //       widget.tableNumber.toString(),
-            //     );
-            //   },
-            //   child: const Text('Complete Order'),
-            // ),
           ],
         ),
+
+
       ),
     );
+  }
+  Future<Map<String,dynamic>> fetchRestaurantData() async{
+    final apiUrl = 'https://trifrnd.in/api/inv.php?apicall=readhotel';
+    final responce = await http.get(Uri.parse(apiUrl));
+
+    if(responce.statusCode == 200){
+      final List<dynamic> data = jsonDecode(responce.body);
+      return Map<String,dynamic>.from(data.first);
+    }
+    else{
+      throw Exception('Failed to load tha Data: ${responce.statusCode}');
+    }
   }
 
   Future<void> showBillItemsPopup(List<Map<String, dynamic>> billItems,
       double grandTotal, String invId) async {
+    final restaurantData = await fetchRestaurantData();
+    final readinvoice = await fetchTableData(invId);
     return showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Center(child: Text('Hotel Bill')),
+          title: Center(child: Column(
+            children: [
+              Text('${restaurantData['restaurant_name']}'),
+              Text(
+                '${restaurantData['restaurant_tag_line']}',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
+              ),
+              SizedBox(height: 10),
+              // Display image from URL
+              Image.network(
+                'https://trifrnd.in/api/${restaurantData['restaurant_logo']}',
+                fit: BoxFit.contain, // Choose the fit option that suits your needs
+                height: 70,  // Adjust the height as needed
+                width: 70,   // Adjust the width as needed
+              ),
+            ],
+          )),
+
           content: SingleChildScrollView(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Text(
-                  'Inv ID: $invId',
-                  style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Contact : ${restaurantData['restaurant_contact_no']}',
+                      // style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(width: 20,),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Address: ${restaurantData['restaurant_address']}',
+                      // style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(width: 20,),
+                  ],
                 ),
                 SizedBox(height: 10,),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Inv ID: $invId',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      'Date: ${readinvoice.isNotEmpty ? readinvoice[0]['inv_date'] : ''}',
+                      // style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+
+                SizedBox(
+                  height: 10,
+                ),
                 Table(
                   defaultColumnWidth: const IntrinsicColumnWidth(),
                   border: TableBorder.all(),
@@ -758,22 +854,20 @@ class _MenuListPageState extends State<MenuListPage> {
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.blue, // Set your desired background color
-                    borderRadius: BorderRadius.circular(8.0), // Set border radius
+                    borderRadius:
+                        BorderRadius.circular(8.0), // Set border radius
                   ),
                   child: TextButton(
                     onPressed: () {
                       _printData(invId);
                     },
-
                     child: Text(
                       'Print',
                       style: TextStyle(
                         color: Colors.white, // Set your desired text color
                         fontSize: 16.0,
                       ),
-
                     ),
-
                   ),
                 ),
                 TextButton(
@@ -821,6 +915,7 @@ class _MenuListPageState extends State<MenuListPage> {
       ],
     );
   }
+
   // This api for reading and printing  the items of Bill.
   Future<List<Map<String, dynamic>>> fetchTableData(String invId) async {
     final apiUrl = 'https://trifrnd.in/api/inv.php?apicall=readinv';
@@ -856,6 +951,9 @@ class _MenuListPageState extends State<MenuListPage> {
     try {
       // Assuming you have fetched the table data in the widget's state
       var tableData = await fetchTableData(invId);
+
+      // Fetch restaurant data
+      final restaurantData = await fetchRestaurantData();
 
       // Connect to Bluetooth printer
       await _connectToBluetoothPrinter();
@@ -893,16 +991,41 @@ class _MenuListPageState extends State<MenuListPage> {
       // ));
       list.add(LineText(
           type: LineText.TYPE_TEXT,
-          content: 'Hotel Bill',
+          content: '${restaurantData['restaurant_name']}',
           weight: 2,
           align: LineText.ALIGN_CENTER,
           linefeed: 1));
+
+      list.add(LineText(
+          type: LineText.TYPE_TEXT,
+          content: '${restaurantData['restaurant_tag_line']}',
+          weight: 2,
+          align: LineText.ALIGN_CENTER,
+          linefeed: 1));
+
       list.add(LineText(
         type: LineText.TYPE_TEXT,
-        content: "", // Empty content for space
-        width: 2, // Adjust this value to control the amount of space on the left
+        content: "",
+        // Empty content for space
+        width: 2,
+        // Adjust this value to control the amount of space on the left
         linefeed: 1,
       ));
+
+      list.add(LineText(
+        type: LineText.TYPE_TEXT,
+        content: 'Contact: ${restaurantData['restaurant_contact_no']}',
+        align: LineText.ALIGN_LEFT,
+        linefeed: 1,
+      ));
+
+      list.add(LineText(
+        type: LineText.TYPE_TEXT,
+        content: 'Address: ${restaurantData['restaurant_address']}',
+        align: LineText.ALIGN_LEFT,
+        linefeed: 1,
+      ));
+
       // Print Invoice ID
       list.add(LineText(
         type: LineText.TYPE_TEXT,
@@ -913,14 +1036,17 @@ class _MenuListPageState extends State<MenuListPage> {
       // Print Invoice Date
       list.add(LineText(
         type: LineText.TYPE_TEXT,
-        content: 'Date: ${tableData.isNotEmpty ? tableData[0]['inv_date'] : ''}',
-        align: LineText.ALIGN_LEFT,
+        content:
+            'Date: ${tableData.isNotEmpty ? tableData[0]['inv_date'] : ''}',
+        align: LineText.ALIGN_RIGHT,
         linefeed: 1,
       ));
       list.add(LineText(
         type: LineText.TYPE_TEXT,
-        content: "", // Empty content for space
-        width: 2, // Adjust this value to control the amount of space on the left
+        content: "",
+        // Empty content for space
+        width: 2,
+        // Adjust this value to control the amount of space on the left
         linefeed: 1,
       ));
 
@@ -935,7 +1061,9 @@ class _MenuListPageState extends State<MenuListPage> {
 
         list.add(LineText(
           type: LineText.TYPE_TEXT,
-          content: "${item['item_price']} X ${item['qty']} =  ${item['item_amt']}", // Concatenate both pieces of content
+          content:
+              "${item['item_price']} X ${item['qty']} =  ${item['item_amt']}",
+          // Concatenate both pieces of content
           align: LineText.ALIGN_LEFT,
           linefeed: 1,
         ));
@@ -943,8 +1071,10 @@ class _MenuListPageState extends State<MenuListPage> {
 // Add an indented LineText for space on the left
         list.add(LineText(
           type: LineText.TYPE_TEXT,
-          content: "", // Empty content for space
-          width: 2, // Adjust this value to control the amount of space on the left
+          content: "",
+          // Empty content for space
+          width: 2,
+          // Adjust this value to control the amount of space on the left
           linefeed: 1,
         ));
       }
@@ -965,8 +1095,10 @@ class _MenuListPageState extends State<MenuListPage> {
 
       list.add(LineText(
         type: LineText.TYPE_TEXT,
-        content: "----------------------------------------", // Empty content for space
-        width: 2, // Adjust this value to control the amount of space on the left
+        content: "----------------------------------------",
+        // Empty content for space
+        width: 2,
+        // Adjust this value to control the amount of space on the left
         linefeed: 1,
       ));
 
@@ -991,7 +1123,6 @@ class _MenuListPageState extends State<MenuListPage> {
       print('Stack trace: $stackTrace');
     }
   }
-
 
 //   void placeOrder() async {
 //     DateTime now = DateTime.now();
@@ -1053,4 +1184,3 @@ class _MenuListPageState extends State<MenuListPage> {
 //     });
 //   }
 }
-

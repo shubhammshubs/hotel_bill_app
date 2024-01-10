@@ -56,7 +56,7 @@ class _RegistrationPageState extends State<SignUpScreen> {
 
   Future<void> _signUp(BuildContext context) async {
     final String apiUrl =
-        'https://apip.trifrnd.com/fruits/inv.php?apicall=signup';
+        'https://trifrnd.in/api/inv.php?apicall=signup';
 
     // Simulate a delay of 1 second
     await Future.delayed(const Duration(seconds: 1));
@@ -89,7 +89,7 @@ class _RegistrationPageState extends State<SignUpScreen> {
         Navigator.of(context).push(
           MaterialPageRoute(
               builder: (context) => HomePage(
-                  // mobileNumber: _mobileController.text,
+                  mobileNumber: _mobileController.text,
                   )),
         );
       } else {
