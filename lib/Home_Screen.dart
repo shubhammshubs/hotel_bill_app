@@ -461,6 +461,7 @@ class _HomePageState extends State<HomePage> {
         onRefresh: () async {
           await fetchTableData();
           await fetchData();
+          _connectToBluetoothPrinter();
         },
         child: GridView.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(

@@ -44,6 +44,7 @@ dependencies:
   font_awesome_flutter: ^10.5.0
   shared_preferences: ^2.2.2
   blue_thermal_printer:
+  table:
 
 
 dev_dependencies:

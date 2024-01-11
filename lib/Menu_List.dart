@@ -3,6 +3,7 @@ import 'package:bluetooth_enable_fork/bluetooth_enable_fork.dart';
 import 'package:bluetooth_print/bluetooth_print.dart';
 import 'package:bluetooth_print/bluetooth_print_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
@@ -12,10 +13,7 @@ class MenuListPage extends StatefulWidget {
   final int tableNumber;
   final String mobileNumber;
 
-  MenuListPage({
-    required this.tableNumber,
-    required this.mobileNumber
-  });
+  MenuListPage({required this.tableNumber, required this.mobileNumber});
 
   @override
   _MenuListPageState createState() => _MenuListPageState();
@@ -37,8 +35,6 @@ class _MenuListPageState extends State<MenuListPage> {
   bool _loading = false;
   bool isLoading = false;
   bool isPrintButtonPressed = false;
-
-
 
   @override
   void initState() {
@@ -485,8 +481,6 @@ class _MenuListPageState extends State<MenuListPage> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -507,13 +501,15 @@ class _MenuListPageState extends State<MenuListPage> {
             order['order_status'] == 'In Process')
         .toList();
 
-
     return WillPopScope(
       onWillPop: () async {
         // Handle back button press here
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomePage(mobileNumber: widget.mobileNumber,)),
+          MaterialPageRoute(
+              builder: (context) => HomePage(
+                    mobileNumber: widget.mobileNumber,
+                  )),
         );
         // Navigator.pop(context);
         return false; // Return false to prevent default back button behavior
@@ -739,20 +735,18 @@ class _MenuListPageState extends State<MenuListPage> {
             ),
           ],
         ),
-
-
       ),
     );
   }
-  Future<Map<String,dynamic>> fetchRestaurantData() async{
+
+  Future<Map<String, dynamic>> fetchRestaurantData() async {
     final apiUrl = 'https://trifrnd.in/api/inv.php?apicall=readhotel';
     final responce = await http.get(Uri.parse(apiUrl));
 
-    if(responce.statusCode == 200){
+    if (responce.statusCode == 200) {
       final List<dynamic> data = jsonDecode(responce.body);
-      return Map<String,dynamic>.from(data.first);
-    }
-    else{
+      return Map<String, dynamic>.from(data.first);
+    } else {
       throw Exception('Failed to load tha Data: ${responce.statusCode}');
     }
   }
@@ -765,24 +759,24 @@ class _MenuListPageState extends State<MenuListPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Center(child: Column(
+          title: Center(
+              child: Column(
             children: [
-              Text('${restaurantData['restaurant_name']}'),
-              Text(
-                '${restaurantData['restaurant_tag_line']}',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
-              ),
+              Text('${restaurantData['resto_name']}'),
+              // Text(
+              //   '${restaurantData['restaurant_tag_line']}',
+              //   style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
+              // ),
               SizedBox(height: 10),
               // Display image from URL
-              Image.network(
-                'https://trifrnd.in/api/${restaurantData['restaurant_logo']}',
-                fit: BoxFit.contain, // Choose the fit option that suits your needs
-                height: 70,  // Adjust the height as needed
-                width: 70,   // Adjust the width as needed
-              ),
+              // Image.network(
+              //   'https://trifrnd.in/api/${restaurantData['restaurant_logo']}',
+              //   fit: BoxFit.contain, // Choose the fit option that suits your needs
+              //   height: 70,  // Adjust the height as needed
+              //   width: 70,   // Adjust the width as needed
+              // ),
             ],
           )),
-
           content: SingleChildScrollView(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -791,29 +785,48 @@ class _MenuListPageState extends State<MenuListPage> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Text(
-                      'Contact : ${restaurantData['restaurant_contact_no']}',
+                      'Email : ${restaurantData['resto_email']}',
                       // style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                    SizedBox(width: 20,),
+                    SizedBox(
+                      width: 20,
+                    ),
                   ],
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Text(
-                      'Address: ${restaurantData['restaurant_address']}',
+                      'Contact : ${restaurantData['resto_contact']}',
                       // style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                    SizedBox(width: 20,),
+                    SizedBox(
+                      width: 20,
+                    ),
                   ],
                 ),
-                SizedBox(height: 10,),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Address: ${restaurantData['resto_address1']}',
+                      // style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(
+                      width: 20,
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: 10,
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'Inv ID: $invId',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     Text(
                       'Date: ${readinvoice.isNotEmpty ? readinvoice[0]['inv_date'] : ''}',
@@ -821,7 +834,6 @@ class _MenuListPageState extends State<MenuListPage> {
                     ),
                   ],
                 ),
-
                 SizedBox(
                   height: 10,
                 ),
@@ -958,6 +970,10 @@ class _MenuListPageState extends State<MenuListPage> {
       // Connect to Bluetooth printer
       await _connectToBluetoothPrinter();
 
+      DateTime now = DateTime.now();
+      String orderDate = '${now.year}-${now.month}-${now.day}';
+      String CurrentTime = '${now.hour}:${now.minute}:${now.second}';
+
       // Replace the following lines with your actual Bluetooth printer details
       String printerName = "BlueTooth Printer";
       String printerAddress = "DC:0D:30:CA:34:E6";
@@ -980,7 +996,11 @@ class _MenuListPageState extends State<MenuListPage> {
           return;
         }
       }
-
+      Icon customIcon = Icon(
+        Icons.shopping_cart, // Choose the desired icon
+        size: 40.0, // Adjust the size as needed
+        color: Colors.black, // Adjust the color as needed
+      );
 
       Map<String, dynamic> config = Map();
       List<LineText> list = [];
@@ -990,19 +1010,59 @@ class _MenuListPageState extends State<MenuListPage> {
       //   width: 2, // Adjust this value to control the amount of space on the left
       //   linefeed: 1,
       // ));
+
       list.add(LineText(
           type: LineText.TYPE_TEXT,
-          content: '${restaurantData['restaurant_name']}',
-          weight: 2,
+          content: '${restaurantData['resto_name']}',
+          weight: 20,
+          size: 20,
           align: LineText.ALIGN_CENTER,
           linefeed: 1));
 
       list.add(LineText(
           type: LineText.TYPE_TEXT,
-          content: '${restaurantData['restaurant_tag_line']}',
-          weight: 2,
+          content: 'A taste you will remember',
+          // weight: 2,
           align: LineText.ALIGN_CENTER,
           linefeed: 1));
+
+      // ByteData data = await rootBundle.load("assets/image/img.png");
+      // List<int> imageBytes =
+      //     data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+      // String base64Image = base64Encode(imageBytes);
+      // list.add(LineText(
+      //     type: LineText.TYPE_IMAGE,
+      //     content: base64Image,
+      //     align: LineText.ALIGN_CENTER,
+      //     linefeed: 1));
+
+      list.add(LineText(
+        type: LineText.TYPE_TEXT,
+        content: "",
+        width: 2,
+        // Adjust this value to control the amount of space on the left
+        linefeed: 1,
+      ));
+
+      list.add(LineText(
+        type: LineText.TYPE_TEXT,
+        content: '${restaurantData['resto_contact']}',
+        align: LineText.ALIGN_CENTER,
+        linefeed: 1,
+      ));
+
+      list.add(LineText(
+        type: LineText.TYPE_TEXT,
+        content: '${restaurantData['resto_address1']}',
+        align: LineText.ALIGN_CENTER,
+        linefeed: 1,
+      ));
+      list.add(LineText(
+        type: LineText.TYPE_TEXT,
+        content: '${restaurantData['resto_city']}',
+        align: LineText.ALIGN_CENTER,
+        linefeed: 1,
+      ));
 
       list.add(LineText(
         type: LineText.TYPE_TEXT,
@@ -1012,64 +1072,112 @@ class _MenuListPageState extends State<MenuListPage> {
         // Adjust this value to control the amount of space on the left
         linefeed: 1,
       ));
-
       list.add(LineText(
         type: LineText.TYPE_TEXT,
-        content: 'Contact: ${restaurantData['restaurant_contact_no']}',
-        align: LineText.ALIGN_LEFT,
-        linefeed: 1,
-      ));
-
-      list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: 'Address: ${restaurantData['restaurant_address']}',
-        align: LineText.ALIGN_LEFT,
-        linefeed: 1,
-      ));
-
-      // Print Invoice ID
-      list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: 'Bill No: $invId',
-        align: LineText.ALIGN_LEFT,
-        linefeed: 1,
-      ));
-      // Print Invoice Date
-      list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content:
+        content: 'Bill: $invId' +
+            ' ' * 7 + // Add enough spaces between Bill and Date
             'Date: ${tableData.isNotEmpty ? tableData[0]['inv_date'] : ''}',
-        align: LineText.ALIGN_RIGHT,
+        align: LineText.ALIGN_LEFT,
         linefeed: 1,
       ));
+      // list.add(LineText(
+      //   type: LineText.TYPE_TEXT,
+      //   content: 'Time:$CurrentTime',
+      //   // Empty content for space
+      //   width: 2,
+      //   // Adjust this value to control the amount of space on the left
+      //   linefeed: 1,
+      // ));
+
       list.add(LineText(
         type: LineText.TYPE_TEXT,
         content: "",
         // Empty content for space
         width: 2,
         // Adjust this value to control the amount of space on the left
+        linefeed: 1,
+      ));
+
+      //  int maxItemNameLength = (tableData.fold<int>(
+      //   0,
+      //       (maxLength, item) => maxLength > item['item_name'].length
+      //       ? maxLength
+      //       : item['item_name'].length,
+      // ) as int);
+      //
+      // list.add(LineText(
+      //   type: LineText.TYPE_TEXT,
+      //   content:  'Item         Qty    Price    Amt',
+      //   // 'Item' + '         ' +
+      //   //     // ' ' * (maxItemNameLength + 1) + // Adjust the initial padding
+      //   //     'Qty    Price    Amt',
+      //   align: LineText.ALIGN_LEFT,
+      //   linefeed: 1,
+      // ));
+
+      int maxItemNameLength = (tableData.fold<int>(
+        0,
+        (maxLength, item) => maxLength > item['item_name'].length
+            ? maxLength
+            : item['item_name'].length,
+      ) as int);
+
+      int itemNamePadding = maxItemNameLength - "Item".length;
+
+      // list.add(LineText(
+      //   type: LineText.TYPE_TEXT,
+      //   content: 'Item' +
+      //       ' ' * itemNamePadding +
+      //       'Qty'.padLeft(5) +
+      //       'Price'.padLeft(5) +
+      //       'Amt'.padLeft(5),
+      //   align: LineText.ALIGN_LEFT,
+      //   linefeed: 1,
+      // ));
+
+      list.add(LineText(
+        type: LineText.TYPE_TEXT,
+        content: 'Item' +
+            ' ' * (17 - "Item".length) +
+            ' Qty '.padLeft(5) +
+            'Price'.padLeft(5) +
+            ' Amt'.padLeft(5),
+        align: LineText.ALIGN_LEFT,
+        linefeed: 1,
+      ));
+
+// Add table header separator
+      list.add(LineText(
+        type: LineText.TYPE_TEXT,
+        // content: '-' * (maxItemNameLength + 25),
+        // content: "1234567890123456789012345678901234567890",
+        content: "--------------------------------",
+
+        width: 10,
+        align: LineText.ALIGN_LEFT,
+
         linefeed: 1,
       ));
 
       for (var index = 0; index < tableData.length; index++) {
         var item = tableData[index];
-        list.add(LineText(
-            type: LineText.TYPE_TEXT,
-            content: '${index + 1}. ${item['item_name']}',
-            width: 0,
-            align: LineText.ALIGN_LEFT,
-            linefeed: 1));
 
+        // Calculate dynamic padding based on the length of the current item name
+        num itemNamePadding = maxItemNameLength - item['item_name'].length;
+
+        // Add item details with dynamic padding
         list.add(LineText(
           type: LineText.TYPE_TEXT,
-          content:
-              "${item['item_price']} X ${item['qty']} =  ${item['item_amt']}",
-          // Concatenate both pieces of content
+          content: '${item['item_name']}' +
+              ' ' * (17 - "${item['item_name']}".length) +
+              '${item['qty'].padLeft(3)}' +
+              '${item['item_price'].padLeft(6)}' +
+              '${item['item_amt'].padLeft(6)}',
+          width: 0,
           align: LineText.ALIGN_LEFT,
           linefeed: 1,
         ));
 
-// Add an indented LineText for space on the left
         list.add(LineText(
           type: LineText.TYPE_TEXT,
           content: "",
@@ -1079,29 +1187,57 @@ class _MenuListPageState extends State<MenuListPage> {
           linefeed: 1,
         ));
       }
-
+      list.add(LineText(
+        type: LineText.TYPE_TEXT,
+        content: "--------------------------------",
+        // Empty content for space
+        width: 2,
+        // Adjust this value to control the amount of space on the left
+        linefeed: 1,
+      ));
       double totalBillAmount = 0;
+      double totalQty = 0;
 
       // Calculate total bill amount
       for (var item in tableData) {
         totalBillAmount += double.parse(item['item_amt']);
       }
+      for (var item in tableData) {
+        totalQty += double.parse(item['qty']);
+      }
 
       list.add((LineText(
         type: LineText.TYPE_TEXT,
-        content: "Total: ${totalBillAmount.toStringAsFixed(2)}",
+        content: "Total Qty: ${totalQty.toStringAsFixed(2)} "
+            " Total: ${totalBillAmount.toStringAsFixed(2)}",
         align: LineText.ALIGN_RIGHT,
         linefeed: 1,
       )));
 
       list.add(LineText(
         type: LineText.TYPE_TEXT,
-        content: "----------------------------------------",
+        content: "--------------------------------",
         // Empty content for space
         width: 2,
         // Adjust this value to control the amount of space on the left
         linefeed: 1,
       ));
+
+      list.add(LineText(
+          type: LineText.TYPE_TEXT,
+          content: 'Thank You',
+          weight: 20,
+          size: 20,
+          align: LineText.ALIGN_CENTER,
+          linefeed: 1));
+
+      list.add(LineText(
+          type: LineText.TYPE_TEXT,
+          content: '',
+          weight: 20,
+          size: 20,
+          align: LineText.ALIGN_CENTER,
+          linefeed: 1));
 
       await bluetoothPrint.printReceipt(config, list);
 
@@ -1110,78 +1246,10 @@ class _MenuListPageState extends State<MenuListPage> {
       completeOrder(
         widget.tableNumber.toString(),
       );
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(
-      //     builder: (context) => HomeScreen(
-      //       mobileNumber: widget.mobileNumber,
-      //       // latestInvoiceId: submittedInvoiceId
-      //     ),
-      //   ),
-      // );
     } catch (e, stackTrace) {
       print('Printing error: $e');
       print('Stack trace: $stackTrace');
     }
   }
 
-//   void placeOrder() async {
-//     DateTime now = DateTime.now();
-//     String orderDate = '${now.year}-${now.month}-${now.day}';
-//     String orderTime = '${now.hour}:${now.minute}:${now.second}';
-//
-//     double grandTotal = _selectedItems.fold(0.0, (sum, item) {
-//       return sum + (item['quantity'] * double.parse(item['itemPrice']));
-//     });
-//
-//
-//     // Create a copy of the selected items list
-//
-//     final apiUrl = 'https://trifrnd.in/api/inv.php?apicall=addorder';
-//
-//     // Create a copy of the selected items list
-//     List<Map<String, dynamic>> selectedItemsCopy = List.from(_selectedItems);
-// // Print the list before making the API request
-//     print('Selected Items List:');
-//     for (var item in selectedItemsCopy) {
-//       print(item);
-//     }
-//     for (var item in selectedItemsCopy) {
-//       final response = await http.post(
-//         Uri.parse(apiUrl),
-//         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-//         body: {
-//           'product_name': item['itemName'],
-//           'product_qty': item['quantity'].toString(),
-//           'product_price': item['itemPrice'].toString(),
-//           'product_amount': (item['quantity'] * double.parse(item['itemPrice'])).toString(),
-//           'order_number': '20',
-//           'order_table': widget.tableNumber.toString(),
-//           'order_date': orderDate,
-//           'order_time': orderTime,
-//         }..removeWhere((key, value) => value == null),
-//       );
-//
-//       print('API Response: ${response.statusCode}');
-//       print('API Body : ${response.body}');
-//
-//       if (response.body == "Order Added Successfully.") {
-//         final snackBar = SnackBar(
-//           content: Text(
-//             'Item ${item['itemName']} added to Cart.',
-//             textAlign: TextAlign.center,
-//           ),
-//         );
-//         ScaffoldMessenger.of(context).showSnackBar(snackBar);
-//       } else {
-//         print(' ${response.body}');
-//       }
-//     }
-//     fetchData();
-//     buildGrandTotalDisplay(widget.tableNumber);
-//     // Clear the selected items after placing the order
-//     setState(() {
-//       _selectedItems.clear();
-//     });
-//   }
 }
