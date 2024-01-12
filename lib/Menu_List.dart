@@ -8,6 +8,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:waiter_bill_app/Home_Screen.dart';
+import 'package:intl/intl.dart';
 
 class MenuListPage extends StatefulWidget {
   final int tableNumber;
@@ -157,6 +158,14 @@ class _MenuListPageState extends State<MenuListPage> {
     // print(formattedDate);
 
     return formattedDate;
+  }
+  String getFormattedTime() {
+    DateTime now = DateTime.now();
+    String CurrentTime = '${now.hour}:${now.minute}:${now.second}';
+
+    // print(formattedDate);
+
+    return CurrentTime;
   }
 
   void incrementQuantity() {
@@ -481,6 +490,7 @@ class _MenuListPageState extends State<MenuListPage> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -763,18 +773,34 @@ class _MenuListPageState extends State<MenuListPage> {
               child: Column(
             children: [
               Text('${restaurantData['resto_name']}'),
-              // Text(
-              //   '${restaurantData['restaurant_tag_line']}',
-              //   style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
-              // ),
-              SizedBox(height: 10),
-              // Display image from URL
-              // Image.network(
-              //   'https://trifrnd.in/api/${restaurantData['restaurant_logo']}',
-              //   fit: BoxFit.contain, // Choose the fit option that suits your needs
-              //   height: 70,  // Adjust the height as needed
-              //   width: 70,   // Adjust the width as needed
-              // ),
+              Text(
+                'A taste you will remember',
+                style: TextStyle(fontSize: 14,),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${restaurantData['resto_address1']}',
+                    style: TextStyle(fontSize: 14,),
+                  ),
+                  // SizedBox(
+                  //   width: 20,
+                  // ),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${restaurantData['resto_city']}',
+                    style: TextStyle(fontSize: 14, ),
+                  ),
+                  // SizedBox(
+                  //   width: 20,
+                  // ),
+                ],
+              ),
             ],
           )),
           content: SingleChildScrollView(
@@ -782,54 +808,24 @@ class _MenuListPageState extends State<MenuListPage> {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Email : ${restaurantData['resto_email']}',
-                      // style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(
-                      width: 20,
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Contact : ${restaurantData['resto_contact']}',
-                      // style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(
-                      width: 20,
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Address: ${restaurantData['resto_address1']}',
-                      // style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(
-                      width: 20,
-                    ),
-                  ],
-                ),
-                SizedBox(
-                  height: 10,
-                ),
-                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    Text(
+                      'Date: ${readinvoice.isNotEmpty ? readinvoice[0]['inv_date'] : ''}',
+                      // style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
                     Text(
                       'Inv ID: $invId',
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
+                  ],
+                )  ,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
                     Text(
-                      'Date: ${readinvoice.isNotEmpty ? readinvoice[0]['inv_date'] : ''}',
+                      'Time: ${getFormattedTime()}',
                       // style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -964,8 +960,22 @@ class _MenuListPageState extends State<MenuListPage> {
       // Assuming you have fetched the table data in the widget's state
       var tableData = await fetchTableData(invId);
 
+
+
       // Fetch restaurant data
       final restaurantData = await fetchRestaurantData();
+
+      String apiDate = tableData.isNotEmpty ? tableData[0]['inv_date'] : '';
+      String formattedDate = '';
+      if (tableData.isNotEmpty) {
+        String apiDate = tableData[0]['inv_date'];
+        if (apiDate.isNotEmpty) {
+          DateTime dateTime = DateTime.parse(apiDate);
+          DateFormat dateFormatter = DateFormat('dd-MM-yyyy');
+          formattedDate = dateFormatter.format(dateTime);
+        }
+      }
+
 
       // Connect to Bluetooth printer
       await _connectToBluetoothPrinter();
@@ -996,20 +1006,9 @@ class _MenuListPageState extends State<MenuListPage> {
           return;
         }
       }
-      Icon customIcon = Icon(
-        Icons.shopping_cart, // Choose the desired icon
-        size: 40.0, // Adjust the size as needed
-        color: Colors.black, // Adjust the color as needed
-      );
 
       Map<String, dynamic> config = Map();
       List<LineText> list = [];
-      // list.add(LineText(
-      //   type: LineText.TYPE_TEXT,
-      //   content: "----------------------------------------", // Empty content for space
-      //   width: 2, // Adjust this value to control the amount of space on the left
-      //   linefeed: 1,
-      // ));
 
       list.add(LineText(
           type: LineText.TYPE_TEXT,
@@ -1026,30 +1025,6 @@ class _MenuListPageState extends State<MenuListPage> {
           align: LineText.ALIGN_CENTER,
           linefeed: 1));
 
-      // ByteData data = await rootBundle.load("assets/image/img.png");
-      // List<int> imageBytes =
-      //     data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-      // String base64Image = base64Encode(imageBytes);
-      // list.add(LineText(
-      //     type: LineText.TYPE_IMAGE,
-      //     content: base64Image,
-      //     align: LineText.ALIGN_CENTER,
-      //     linefeed: 1));
-
-      list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: "",
-        width: 2,
-        // Adjust this value to control the amount of space on the left
-        linefeed: 1,
-      ));
-
-      list.add(LineText(
-        type: LineText.TYPE_TEXT,
-        content: '${restaurantData['resto_contact']}',
-        align: LineText.ALIGN_CENTER,
-        linefeed: 1,
-      ));
 
       list.add(LineText(
         type: LineText.TYPE_TEXT,
@@ -1074,20 +1049,20 @@ class _MenuListPageState extends State<MenuListPage> {
       ));
       list.add(LineText(
         type: LineText.TYPE_TEXT,
-        content: 'Bill: $invId' +
+        content: 'Date: $formattedDate'  +
             ' ' * 7 + // Add enough spaces between Bill and Date
-            'Date: ${tableData.isNotEmpty ? tableData[0]['inv_date'] : ''}',
+            'Bill: $invId',
         align: LineText.ALIGN_LEFT,
         linefeed: 1,
       ));
-      // list.add(LineText(
-      //   type: LineText.TYPE_TEXT,
-      //   content: 'Time:$CurrentTime',
-      //   // Empty content for space
-      //   width: 2,
-      //   // Adjust this value to control the amount of space on the left
-      //   linefeed: 1,
-      // ));
+      list.add(LineText(
+        type: LineText.TYPE_TEXT,
+        content: 'Time: $CurrentTime',
+        // Empty content for space
+        width: 2,
+        // Adjust this value to control the amount of space on the left
+        linefeed: 1,
+      ));
 
       list.add(LineText(
         type: LineText.TYPE_TEXT,

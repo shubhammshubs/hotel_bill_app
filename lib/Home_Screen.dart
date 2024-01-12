@@ -359,9 +359,9 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _connectToBluetoothPrinter() async {
     try {
-      setState(() {
-        _loading = true;
-      });
+        setState(() {
+          _loading = true;
+        });
 
       String printerName = "BlueTooth Printer";
       String printerAddress = "DC:0D:30:CA:34:E6";
@@ -374,6 +374,8 @@ class _HomePageState extends State<HomePage> {
 
       if (await bluetoothPrint.isConnected == true) {
         print('Already connected to ${device.name}');
+        // await bluetoothPrint.connect(device);
+
       } else {
         await bluetoothPrint.connect(device);
 
@@ -461,7 +463,7 @@ class _HomePageState extends State<HomePage> {
         onRefresh: () async {
           await fetchTableData();
           await fetchData();
-          _connectToBluetoothPrinter();
+          await _connectToBluetoothPrinter();
         },
         child: GridView.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
